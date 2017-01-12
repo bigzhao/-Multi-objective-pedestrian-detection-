@@ -28,11 +28,11 @@
 #define NP 200
 #define PI 3.1415926
 #define Dim 3
-#define NICHING_SIZE 20
+#define NICHING_SIZE 5
 #define LOCAL_DELTA  0.001
-#define LOCAL_SEARCHING_TIMES 4
+#define LOCAL_SEARCHING_TIMES 5
 #define X2_SCALE  10.0
-#define THRESHOLD 2.5
+#define THRESHOLD 1
 boost::mt19937 rng((unsigned)time(0)); /* 随机数种子 */
 boost::uniform_01<boost::mt19937&> u01(rng);
 using namespace cv;

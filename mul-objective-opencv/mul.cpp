@@ -2,25 +2,76 @@
 //
 
 #include "mul.h"
-
-int MAX_FES = 2000;            //代数      
+#define ITER 20
+#define START 0
+int MAX_FES = 700;            //代数      
 char _filename[100] = "pic\\person_303.png";  //图片选择
-char g_filename[][50] = {
-"pic\\crop001573.png",
-"pic\\crop001670.png",
-"pic\\person_248.png",
-"pic\\person_and_bike_012.png",
-"pic\\person_085.png",
-"pic\\person_138.png",
-"pic\\person_251.png",
-"pic\\person_and_bike_035.png",
-"pic\\person_093.png",
-"pic\\person_189.png",
-"pic\\person_303.png" };
+char g_filename[][68] = {
+	//"pos\\person_265.png",
+	//"pos\\crop001676.png",
+	//"pic\\1626.jpg",
+	//"pic\\1815.jpg",
+	"pos\\(1).png",
+	"pos\\(2).png",
+	"pos\\(3).png",
+	"pos\\(4).png",
+	"pos\\(5).png",
+	"pos\\(6).png",
+	"pos\\(7).png",
+	"pos\\(8).png",
+	"pos\\(9).png",
+	"pos\\(10).png",
+
+	"pos\\(11).png",
+	"pos\\(12).png",
+	"pos\\(13).png",
+	"pos\\(14).png",
+	"pos\\(15).png", 
+	"pos\\(16).png",
+	"pos\\(17).png",
+	"pos\\(18).png",
+	"pos\\(19).png",
+	"pos\\(20).png",
+
+	"pos\\(21).png",
+	"pos\\(22).png",
+	"pos\\(23).png",
+	"pos\\(24).png",
+	"pos\\(25).png",
+	"pos\\(26).png",
+	"pos\\(27).png",
+	"pos\\(28).png",
+	"pos\\(29).png",
+	"pos\\(30).png",
+
+	"pos\\(31).png",
+	"pos\\(32).png",
+	"pos\\(33).png",
+	"pos\\(34).png",
+	"pos\\(35).png",
+	"pos\\(36).png",
+	"pos\\(37).png",
+	"pos\\(38).png",
+	"pos\\(39).png",
+	"pos\\(40).png",
+	"pos\\(41).png",
+	"pos\\(42).png",
+	//"pos\\(43).png",
+	//"pos\\(44).png",
+	//"pos\\(45).png",	//"pos\\(40).png",
+	//"pos\\(46).png",
+	//"pos\\(47).png",
+	//"pos\\(48).png",
+	//"pos\\(49).png",
+	//"pos\\one(1).png",
+	//"pos\\one(2).png",
+	//"pos\\one.png",
+
+};
 
 double upper[3] = { 320, 320, 60 };       //图片的默认size以及winsize
 double lower[3] = { 0, 0, 20 };
-const double size_factor = 0.85;            //to resize the rect           0.8width，0.86heightis standrad
+const double size_factor = 0.80;            //to resize the rect   0.8width，0.86heightis standrad
 const double haar_factor = 0.8;
 const double radius_factor = 0.4;         //3.2 is half of the window
 const double threshold_hog = -0.5;
@@ -29,7 +80,7 @@ const double alpha = 1;         //size factor
 const double beta = 0.5;
 
 int nvars = 3;   //搜索问题维度
-Mat img_origin, img, img_for_multiscale, img_for_NSDE, img_for_LAMSACO;
+Mat img_origin, img, img_for_multiscale, img_for_NSDE, img_for_LAMSACO, img_for_LMCEDA;
 int g_fes = 0;
 const double stepx = 8;
 const double stepy = 8;
@@ -37,12 +88,13 @@ int shift = 0;
 //const double stepz=0.1;
 const double stepz = 2;
 
-int trials = 10;
+
+int trials = 1;
 FILE * outf;
 vector<Mat> scaled_pics;
 double weight[800][800][60];
 float block_des[36][600][500][36] = { 0 };
-
+//float**** block_des;
 //HOGDescriptor hog;
 //HOG_NSDE hog; 
 struct Solution
@@ -51,15 +103,6 @@ struct Solution
 	int x[3];      //try the bin DE
 	double fitness;
 };
-
-
-
-double randnum(double low, double upper)
-{
-	double ret = rand() % 10000 / 10000.0;
-	ret = low + (upper - low)*ret;
-	return ret;
-}
 
 #include "defultpeople.h"
 #include "func.h"
@@ -72,10 +115,11 @@ int readImg(char * fname)
 	img = imread(fname);
 	img_for_NSDE = imread(fname);
 	img_for_LAMSACO = imread(fname);
+	img_for_LMCEDA = imread(fname);
 	img_origin = imread(fname);
 
 	if (img.empty()){
-		printf("cannot read test image");
+		fprintf(stderr, "cannot read test image");
 		return 1;
 	}
 	upper[0] = img.cols;
@@ -86,6 +130,7 @@ int readImg(char * fname)
 
 	lower[2] = cvCeil(upper[2] * beta);
 	cout << "size of pic:" << img_origin.size() << endl;
+
 	return 0;
 }
 
@@ -112,10 +157,10 @@ void bounding_solution(struct Solution *s)
 	int k;
 	for (k = 0; k < Dim; k++)
 	if (s->x[k] < lower[k])
-		s->x[k] = lower[k];
+		s->x[k] = (int)lower[k];
 
 	if (upper[2] < s->x[2])
-		s->x[2] = upper[2];
+		s->x[2] = (int)upper[2];
 
 	if ((upper[0] - 64 * (s->x[2] / X2_SCALE) + shift) < s->x[0])             //X和Y的坐标上限会随winsize的变化而变化
 		s->x[0] = (int)(upper[0] - 64 * (s->x[2] / X2_SCALE) + shift);       // 10->5
@@ -357,12 +402,12 @@ void construct_NP_new_solutions(struct Solution *solutions,
 {
 	int    i, j, k, m;
 	double fs_max_i, fs_min_i, sigma, prob, delta[Dim] = {0};
-	double *probability = NULL, *s_weight = NULL, position[Dim];
-	struct Solution *niching_solutions = NULL, selected_solution, mu;
+	struct Solution selected_solution, mu, niching_solutions[NICHING_SIZE];
 	/* probability weight niching_solutions 对应每个 niching 的概率 权重 解 */
-	probability = new double[NICHING_SIZE];
-	s_weight = new double[NICHING_SIZE];
-	niching_solutions = new struct Solution[NICHING_SIZE];
+	//probability = new double[NICHING_SIZE];
+	//s_weight = new double[NICHING_SIZE];
+	//niching_solutions = new struct Solution[NICHING_SIZE];
+	double probability[NICHING_SIZE], s_weight[NICHING_SIZE], position[Dim];
 
 	for (i = 0; i < NP / NICHING_SIZE; i++)
 	{
@@ -416,8 +461,16 @@ void construct_NP_new_solutions(struct Solution *solutions,
 			/* 建立 dim 维 的解*/
 			for (k = 0; k < Dim; k++)
 			{
-				boost::normal_distribution<> nd(mu.x[k], delta[k]); // boots 库的高斯分布函数
-				new_solutions[i * NICHING_SIZE + j].x[k] = nd(u01);
+				//if (u01() < 0.5)
+				//{
+					boost::normal_distribution<> nd(mu.x[k], delta[k]); // boots 库的高斯分布函数
+					new_solutions[i * NICHING_SIZE + j].x[k] = nd(u01);
+			/*	}
+				else
+				{
+					boost::cauchy_distribution<> cd(mu.x[k], delta[k]);
+					new_solutions[i * NICHING_SIZE + j].x[k] = cd(u01);
+				}*/
 				//cout << mu.x[k] << "  " << new_solutions[i * NICHING_SIZE + j].x[k] << endl;
 				//cout << i * NICHING_SIZE + j << endl;
 			}
@@ -525,11 +578,8 @@ void LAMCACO(vector <struct Solution> *mul_object_found)
 	//int    NICHING_SIZE = 10;  // 聚类 size 先固定为10 原来是在G里面随机选
 	int    nearest_archive_solution_index;
 	int    niching_index[NP / NICHING_SIZE][NICHING_SIZE];
-	cout << "ok" << endl;
 
 	initialize_NP_solutions(solutions);
-	cout << "ok" << endl;
-
 	while (g_fes < MAX_FES)
 	{
 		obtain_fitness_max_min(solutions, &fs_max, &fs_min);
@@ -585,7 +635,8 @@ void LAMCACO(vector <struct Solution> *mul_object_found)
 
 void LAMSACO(vector <struct Solution> *mul_object_found)
 {
-	struct Solution solutions[NP], new_solutions[NP], output_solutions[NP / NICHING_SIZE][NICHING_SIZE], result_seeds[NP / NICHING_SIZE];
+	struct Solution solutions[NP], new_solutions[NP], output_solutions[NP / NICHING_SIZE][NICHING_SIZE], 
+		result_seeds[NP / NICHING_SIZE];
 	int    seeds[NP / NICHING_SIZE], seed;
 	double fs_max, fs_min, radius;
 	int    i, j, k;
@@ -593,11 +644,8 @@ void LAMSACO(vector <struct Solution> *mul_object_found)
 	//int    NICHING_SIZE = 10;  // 聚类 size 先固定为10 原来是在G里面随机选
 	int    nearest_archive_solution_index;
 	int    niching_index[NP / NICHING_SIZE][NICHING_SIZE];
-	cout << "ok" << endl;
 
 	initialize_NP_solutions(solutions);
-	cout << "ok" << endl;
-
 	while (g_fes < MAX_FES)
 	{
 		obtain_fitness_max_min(solutions, &fs_max, &fs_min);
@@ -606,7 +654,8 @@ void LAMSACO(vector <struct Solution> *mul_object_found)
 
 		for (i = 0; i < NP; i++)
 		{
-			nearest_archive_solution_index = get_nearest_archive_solution(new_solutions[i], solutions, NP);    /* 获得最近 solutions 的下标 */
+			/* 获得最近 solutions 的下标 */
+			nearest_archive_solution_index = get_nearest_archive_solution(new_solutions[i], solutions, NP);    
 			if (new_solutions[i].fitness < solutions[nearest_archive_solution_index].fitness)
 				solutions[nearest_archive_solution_index] = new_solutions[i];
 		}
@@ -651,6 +700,167 @@ void LAMSACO(vector <struct Solution> *mul_object_found)
 }
 
 
+/************************************************************************
+* Function Name : get_stddev
+* Create Date : 2016/11/26
+* Author/Corporation : bigzhao
+**
+Description : 计算标准差
+*
+* Param : x: 待计算的数组
+* mean: 平均值
+* length: 数组长度
+**
+************************************************************************/
+double get_stddev(double *x, double mean, int length)
+{
+	int    i;
+	double sum = 0.0;
+
+	for (i = 0; i < length; i++)
+		sum += pow(x[i] - mean, 2);
+
+	return sqrt(sum / length);
+}
+/************************************************************************
+* Function Name : generate_new_population
+* Create Date : 2016/11/26
+* Author/Corporation : bigzhao
+**
+Description : EDAs 里面重要的一个环节，通过高斯分布产生下一代种群，里面的高
+斯函数使用 boots 库的 normal_distribution，用法是百度查的，日后得好好琢磨一
+下
+*
+* Param : pop: 旧种群
+* new_pop: 新种群
+**
+************************************************************************/
+void generate_new_solutions_use_EDA(struct Solution *solutions, 
+	int niching_index[][NICHING_SIZE], struct Solution *new_solutions)
+{
+	int    i, j, k, m = 0;
+	double mean, stddev, sum = 0;
+	double temp_dimension[NICHING_SIZE];
+
+	for (k = 0; k < NP / NICHING_SIZE; k++)
+	{
+		for (i = 0; i < Dim; i++)
+		{
+			sum = 0;
+			for (j = 0; j < NICHING_SIZE; j++)
+			{
+				temp_dimension[j] = solutions[niching_index[k][j]].x[i];
+				sum += temp_dimension[j];
+			}
+
+			mean = sum / NICHING_SIZE;
+			stddev = get_stddev(temp_dimension, mean, NICHING_SIZE);
+			boost::normal_distribution<> nd(mean, stddev); // boots 库的高斯分布函数
+
+			for (j = 0; j < NICHING_SIZE; j++)
+			{
+				new_solutions[k * NICHING_SIZE + j].x[i] = nd(u01);   // 高斯分布产生新的值，组成个体
+			}
+
+		}
+	}
+	// 计算 fitness
+	for (i = 0; i < NP; i++)
+	{
+		bounding_solution(new_solutions + i);
+		object_function(new_solutions + i);
+	}
+}
+
+int get_nearest_archive_solution_niche(struct Solution solution, struct Solution *source, int *index, int src_length)
+{
+	int i, nearest_index = 0;
+	for (i = 1; i < src_length; i++)
+	{
+		if (calculate_distance(solution.x, source[index[i]].x) < calculate_distance(solution.x, source[index[nearest_index]].x))
+			nearest_index = i;
+	}
+	return index[nearest_index];
+}
+
+/* Local Search-Based MCEDA */
+void LMCEDA(vector <struct Solution> *mul_object_found)
+{
+	struct Solution solutions[NP], new_solutions[NP], output_solutions[NP / NICHING_SIZE][NICHING_SIZE],
+		result_seeds[NP / NICHING_SIZE];
+	int    seeds[NP / NICHING_SIZE], seed;
+	double fs_max, fs_min, radius;
+	int    i, j, k;
+	int    G[2] = { 10, 10 };
+	//int    NICHING_SIZE = 10;  // 聚类 size 先固定为10 原来是在G里面随机选
+	int    nearest_archive_solution_index;
+	int    niching_index[NP / NICHING_SIZE][NICHING_SIZE];
+
+	initialize_NP_solutions(solutions);
+	while (g_fes < MAX_FES)
+	{
+		//obtain_fitness_max_min(solutions, &fs_max, &fs_min);
+		partition_into_crowds(solutions, niching_index);
+		generate_new_solutions_use_EDA(solutions, niching_index, new_solutions);
+
+		//for (i = 0; i < NP / NICHING_SIZE; i++)
+		//{
+		//	for (j = 0; j < NICHING_SIZE; j++)
+		//	{
+		//		/* 获得最近 solutions 的下标 */
+		//		nearest_archive_solution_index = get_nearest_archive_solution_niche(new_solutions[i], solutions, niching_index[j], NICHING_SIZE);
+		//		if (new_solutions[i * NICHING_SIZE + j].fitness < solutions[nearest_archive_solution_index].fitness)
+		//			solutions[nearest_archive_solution_index] = new_solutions[i];
+		//	}
+		//}
+
+		for (i = 0; i < NP; i++)
+		{
+				/* 获得最近 solutions 的下标 */
+				nearest_archive_solution_index = get_nearest_archive_solution(new_solutions[i], solutions, NP);
+				if (new_solutions[i].fitness < solutions[nearest_archive_solution_index].fitness)
+					solutions[nearest_archive_solution_index] = new_solutions[i];
+		}
+		for (i = 0; i < NP / NICHING_SIZE; i++)
+		{
+			seed = 0;
+			for (j = 1; j < NICHING_SIZE; j++)
+			{
+				if (solutions[niching_index[i][j]].fitness < solutions[niching_index[i][seed]].fitness)
+					seed = j;
+			}
+			seeds[i] = seed;
+		}
+
+		local_searching(solutions, seeds, niching_index);     /* 一定概率进行局部搜索 */
+	}
+	for (i = 0; i < NP / NICHING_SIZE; i++)
+	{
+		for (j = 0; j < NICHING_SIZE; j++)
+		{
+			output_solutions[i][j] = solutions[niching_index[i][j]];
+		}
+		sort(&output_solutions[i][0], &output_solutions[i][NICHING_SIZE], my_compare);
+	}
+	for (i = 0; i < NP / NICHING_SIZE; i++)
+		result_seeds[i] = output_solutions[i][0];
+	sort(result_seeds, result_seeds + NP / NICHING_SIZE, my_compare);
+	for (i = 0; i < NP / NICHING_SIZE; i++)
+	{
+		if (result_seeds[i].fitness < THRESHOLD)
+		{
+			for (k = 0; k < mul_object_found->size(); k++)
+			{
+				radius = (*mul_object_found)[k].x[2] * 6.4 * radius_factor;
+				if (abs((*mul_object_found)[k].x[0] - result_seeds[i].x[0]) < radius)
+					break;
+			}
+			if (k == mul_object_found->size())
+				mul_object_found->push_back(result_seeds[i]);
+		}
+	}
+}
+
 
 
 int main(int argc, char** argv)
@@ -665,15 +875,20 @@ int main(int argc, char** argv)
 	char window_name[100] = "DE结果1";
 	HOGDescriptor hog2;
 	hog2.setSVMDetector(hog2.getDefaultPeopleDetector());
+	FILE *fp;
+	if ((fp = fopen("lmceda_nsde.txt", "w")) == NULL) {
+		printf("File cannot be opened/n");
+		exit(1);
+	}
 	//从文件中读取图像  
-	for (m = 0; m < 1; m++)
+	for (m = START; m < ITER; m++)
 	{
-		IplImage *pImage = cvLoadImage(_filename, CV_LOAD_IMAGE_UNCHANGED);
+		IplImage *pImage = cvLoadImage(g_filename[m], CV_LOAD_IMAGE_UNCHANGED);
 		for (int tri = 0; tri < trials; tri++)
 		{
 			mul_object_found.clear();
-
-			readImg(g_filename[0]);
+			cout << g_filename[m] << endl;
+			readImg(g_filename[m]);
 
 			int levels = upper[2] - lower[2];
 
@@ -682,85 +897,84 @@ int main(int argc, char** argv)
 			for (int k = 0; k < levels + 1; k++)
 				weight[i][j][k] = -10000;
 			memset(block_des, 0, sizeof(block_des));
-
-			scale_the_pics();
+			mul_object_found.clear();
 			clock_t start, end;
 			start = clock();
-
-			/* 从这里开始是 LAMCACO 的代码-------------------------------------------------------------------- */
-			LAMCACO(&mul_object_found);
+			scale_the_pics();
 
 
-			end = clock();
-			double cal_time = double(end - start) / CLOCKS_PER_SEC;
-			cout << "LAMCACO 耗费时间（秒）:" << cal_time << endl;
-			//cout << "Repeat times:" << count_repeated << endl;
-			//cout << "Repeat block times:" << count_re_block << endl;
-			//cout << "Block times:" << count_block << endl;
+			/* 从这里开始是 LAMCACO 的代码--------已注释 2016/12/2 22：44------------------------------------- */
+			//LAMCACO(&mul_object_found);
 
 
-			CvRect rect;
-			scale = winsize*stepz + lower[2];
-			scale = scale / X2_SCALE;    // 10->5.0
-			int sx = cvCeil(stepx / scale);
-
-			cout << "found size:" << mul_object_found.size() << endl;
-
-			/* 我的测试代码 */
-			for (i = 0; i < mul_object_found.size(); i++)
-			{
-				rect.x = mul_object_found[i].x[0];
-				rect.y = mul_object_found[i].x[1];
-
-				rect.width = 64 * mul_object_found[i].x[2] / X2_SCALE; // 10->5.0
-				rect.height = 128 * mul_object_found[i].x[2] / X2_SCALE;      //try the bin de // 10->5.0
+			//end = clock();
+			//double cal_time = double(end - start) / CLOCKS_PER_SEC;
+			//cout << "LAMCACO 耗费时间（秒）:" << cal_time << endl;
+			////cout << "Repeat times:" << count_repeated << endl;
+			////cout << "Repeat block times:" << count_re_block << endl;
+			////cout << "Block times:" << count_block << endl;
 
 
-				if (size_factor > 0 && size_factor < 1)
-				{                               //to resize the rect
-					rect.x += rect.width * (1 - size_factor) / 2;
-					rect.y += rect.height * (1 - size_factor) / 2;
-					rect.width = rect.width * size_factor;
-					rect.height = rect.height * size_factor;
-				}
-				cv::rectangle(img_for_NSDE, rect, cv::Scalar(255, 255, 255), 2);
-			}
+			//CvRect rect;
+			//scale = winsize*stepz + lower[2];
+			//scale = scale / X2_SCALE;    // 10->5.0
+			//int sx = cvCeil(stepx / scale);
+
+			//cout << "found size:" << mul_object_found.size() << endl;
+
+			///* 我的测试代码 */
+			//for (i = 0; i < mul_object_found.size(); i++)
+			//{
+			//	rect.x = mul_object_found[i].x[0];
+			//	rect.y = mul_object_found[i].x[1];
+
+			//	rect.width = 64 * mul_object_found[i].x[2] / X2_SCALE; // 10->5.0
+			//	rect.height = 128 * mul_object_found[i].x[2] / X2_SCALE;      //try the bin de // 10->5.0
+
+			//	if (size_factor > 0 && size_factor < 1)
+			//	{                               //to resize the rect
+			//		rect.x += rect.width * (1 - size_factor) / 2;
+			//		rect.y += rect.height * (1 - size_factor) / 2;
+			//		rect.width = rect.width * size_factor;
+			//		rect.height = rect.height * size_factor;
+			//	}
+			//	cv::rectangle(img_for_NSDE, rect, cv::Scalar(255, 255, 255), 2);
+			//}
 			/*LAMCACO 代码结束-----------------------------------------------------------------------------*/
 
-			mul_object_found.clear();
 
-			/* 从这里开始是 LAMSACO 的代码------------------------------------------------------------------*/
-			start = clock();
-			LAMSACO(&mul_object_found);
-			end = clock();
-			cal_time = double(end - start) / CLOCKS_PER_SEC;
-			cout << "LAMCACO 耗费时间（秒）:" << cal_time << endl;
-			//cout << "Repeat times:" << count_repeated << endl;
-			//cout << "Repeat block times:" << count_re_block << endl;
-			//cout << "Block times:" << count_block << endl;
-
-
-			cout << "found size:" << mul_object_found.size() << endl;
-
-			/* 我的测试代码 */
-			for (i = 0; i < mul_object_found.size(); i++)
-			{
-				rect.x = mul_object_found[i].x[0];
-				rect.y = mul_object_found[i].x[1];
-
-				rect.width = 64 * mul_object_found[i].x[2] / X2_SCALE; // 10->5.0
-				rect.height = 128 * mul_object_found[i].x[2] / X2_SCALE;      //try the bin de // 10->5.0
+			/* 从这里开始是 LAMSACO 的代码 已注释 2016/12/2 22：44-------------------------------------------*/
+			//start = clock();
+			//LAMSACO(&mul_object_found);
+			//end = clock();
+			//cal_time = double(end - start) / CLOCKS_PER_SEC;
+			//cout << "LAMCACO 耗费时间（秒）:" << cal_time << endl;
+			////cout << "Repeat times:" << count_repeated << endl;
+			////cout << "Repeat block times:" << count_re_block << endl;
+			////cout << "Block times:" << count_block << endl;
 
 
-				if (size_factor > 0 && size_factor < 1)
-				{                               //to resize the rect
-					rect.x += rect.width * (1 - size_factor) / 2;
-					rect.y += rect.height * (1 - size_factor) / 2;
-					rect.width = rect.width * size_factor;
-					rect.height = rect.height * size_factor;
-				}
-				cv::rectangle(img_for_LAMSACO, rect, cv::Scalar(255, 255, 255), 2);
-			}
+			//cout << "found size:" << mul_object_found.size() << endl;
+
+			///* 我的测试代码 */
+			//for (i = 0; i < mul_object_found.size(); i++)
+			//{
+			//	rect.x = mul_object_found[i].x[0];
+			//	rect.y = mul_object_found[i].x[1];
+
+			//	rect.width = 64 * mul_object_found[i].x[2] / X2_SCALE; // 10->5.0
+			//	rect.height = 128 * mul_object_found[i].x[2] / X2_SCALE;      //try the bin de // 10->5.0
+
+
+			//	if (size_factor > 0 && size_factor < 1)
+			//	{                               //to resize the rect
+			//		rect.x += rect.width * (1 - size_factor) / 2;
+			//		rect.y += rect.height * (1 - size_factor) / 2;
+			//		rect.width = rect.width * size_factor;
+			//		rect.height = rect.height * size_factor;
+			//	}
+			//	cv::rectangle(img_for_LAMSACO, rect, cv::Scalar(255, 255, 255), 2);
+			//}
 			/* LAMSACO 代码结束-------------------------------------------------------------------------*/
 
 			/* 测试代码结束 */
@@ -791,32 +1005,71 @@ int main(int argc, char** argv)
 
 			//cv::rectangle(img_for_NSDE, rect, cv::Scalar(255, 255, 255), 2);
 
+			/* 从这里开始是 LMCEDA 的代码------------------------------------------- */
+			LMCEDA(&mul_object_found);
 
+
+			end = clock();
+			double cal_time = double(end - start) / CLOCKS_PER_SEC;
+			cout << "LMCEDA 耗费时间（秒）:" << cal_time << endl;
+			fprintf(fp, "%lf\n", cal_time);
+
+			//cout << "Repeat times:" << count_repeated << endl;
+			//cout << "Repeat block times:" << count_re_block << endl;
+			//cout << "Block times:" << count_block << endl;
+
+			// 注释 2016.12.14
+			CvRect rect;
+			scale = winsize*stepz + lower[2];
+			scale = scale / X2_SCALE;    // 10->5.0
+			int sx = cvCeil(stepx / scale);
+
+			cout << "found size:" << mul_object_found.size() << endl;
+
+			/* 我的测试代码 */
+			for (i = 0; i < mul_object_found.size(); i++)
+			{
+				rect.x = mul_object_found[i].x[0];
+				rect.y = mul_object_found[i].x[1];
+
+				rect.width = 64 * mul_object_found[i].x[2] / X2_SCALE; // 10->5.0
+				rect.height = 128 * mul_object_found[i].x[2] / X2_SCALE;      //try the bin de // 10->5.0
+
+				if (size_factor > 0 && size_factor < 1)
+				{                               //to resize the rect
+					rect.x += rect.width * (1 - size_factor) / 2;
+					rect.y += rect.height * (1 - size_factor) / 2;
+					rect.width = rect.width * size_factor;
+					rect.height = rect.height * size_factor;
+				}
+				cv::rectangle(img_for_LMCEDA, rect, cv::Scalar(255, 0, 0), 4);
+			}
+			//注释 2016.12.14
+			/*LAMCACO 代码结束-----------------------------------------------------------------------------*/
 
 
 
 			//}
+			/* 开始 MultiScale 算法---------------------------------------------------------------------------*/
+			//start = clock();
+			//std::vector<cv::Rect> regions;   //for multiscale detection
+
+			//hog2.detectMultiScale(img_for_multiscale, regions, 0, cv::Size(8, 8), cv::Size(32, 32), 1.05, 2);
+
+			//for (size_t b = 0; b < regions.size(); b++)
+			//{
+			//	cv::rectangle(img_for_multiscale, regions[b], cv::Scalar(0, 0, 255), 2);
+			//}                             //for multiscale detection
+			//end = clock();
+			//double time0 = double(end - start) / CLOCKS_PER_SEC;
+			//cout << "multiscale 耗费时间（秒）:" << time0 << endl;
+			///* MultiScale 算法结束 ——------------------------------------------------------------------------*/
 
 
-
-			//clock_t start0, cal_time0, end0;
-			
-			start = clock();
-			std::vector<cv::Rect> regions;   //for multiscale detection
-
-			hog2.detectMultiScale(img_for_multiscale, regions, 0, cv::Size(8, 8), cv::Size(32, 32), 1.05, 2);
-
-			for (size_t b = 0; b < regions.size(); b++)
-			{
-				cv::rectangle(img_for_multiscale, regions[b], cv::Scalar(0, 0, 255), 2);
-			}                             //for multiscale detection
-			end = clock();
-			double time0 = double(end - start) / CLOCKS_PER_SEC;
-			//cout << "Time used of NSDE(second):" << cal_time << endl;
-			cout << "multiscale 耗费时间（秒）:" << time0 << endl;
-			//cout << "The lower and upper is:" << lower[2] << "     " << upper[2];
-			cv::imshow("Multiscale结果", img_for_multiscale);
-			cv::imshow("LAMCACO", img_for_NSDE);
+			////cout << "The lower and upper is:" << lower[2] << "     " << upper[2];
+			///* 显示结果 */
+			//cv::imshow("Multiscale结果", img_for_multiscale);
+			cv::imshow("LMCEDA", img_for_LMCEDA);
 			//cv::imshow("LAMSACO", img_for_LAMSACO);
 			cvWaitKey();
 

@@ -467,7 +467,6 @@ void HOG_NSDE::compute_2(Point location, vector<float>& descriptors, int level)
 		const HOGCache::BlockData& bj = blockData[j];
 		Point pt=location+bj.imgOffset;  
 		float* dst = descriptor + bj.histOfs;
-		
 		if(block_des[level][pt.x][pt.y][0]){
 		    for( int k = 0; k < blockHistogramSize; k++ )
 			    dst[k] = block_des[level][pt.x][pt.y][k];
@@ -505,7 +504,7 @@ void scale_the_pics()
     start2 = clock();
 	for(i=0;i<=levels;i=i+stepz){
 		scale=(i+lower[2])/X2_SCALE;   // 10->20
-		Size sz(cvRound(img.cols/scale), cvRound(img.rows/scale)); 
+		Size sz(cvRound(img.cols/scale),cvRound(img.rows/scale)); 
 
 		 
 		Mat smallerImg;
@@ -531,7 +530,6 @@ double funceval(int * x)  {
 	double score=0;
 	double scale;  
 	int level=int((x[2]-lower[2])/2)*2;
-
 	scale = double(x[2]) / X2_SCALE; //10->20
  
 	int sx=8;
