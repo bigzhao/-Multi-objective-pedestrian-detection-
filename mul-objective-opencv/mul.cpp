@@ -834,31 +834,46 @@ void LMCEDA(vector <struct Solution> *mul_object_found)
 
 		local_searching(solutions, seeds, niching_index);     /* 一定概率进行局部搜索 */
 	}
-	for (i = 0; i < NP / NICHING_SIZE; i++)
-	{
-		for (j = 0; j < NICHING_SIZE; j++)
-		{
-			output_solutions[i][j] = solutions[niching_index[i][j]];
-		}
-		sort(&output_solutions[i][0], &output_solutions[i][NICHING_SIZE], my_compare);
-	}
-	for (i = 0; i < NP / NICHING_SIZE; i++)
-		result_seeds[i] = output_solutions[i][0];
-	sort(result_seeds, result_seeds + NP / NICHING_SIZE, my_compare);
-	for (i = 0; i < NP / NICHING_SIZE; i++)
-	{
-		if (result_seeds[i].fitness < THRESHOLD)
+	//for (i = 0; i < NP / NICHING_SIZE; i++)
+	//{
+	//	for (j = 0; j < NICHING_SIZE; j++)
+	//	{
+	//		output_solutions[i][j] = solutions[niching_index[i][j]];
+	//	}
+	//	sort(&output_solutions[i][0], &output_solutions[i][NICHING_SIZE], my_compare);
+	//}
+	//for (i = 0; i < NP / NICHING_SIZE; i++)
+	//	result_seeds[i] = output_solutions[i][0];
+
+	sort(solutions, solutions + NP, my_compare);
+	//for (i = 0; i < NP / NICHING_SIZE; i++)
+	//{
+	//	if (result_seeds[i].fitness < THRESHOLD)
+	//	{
+	//		for (k = 0; k < mul_object_found->size(); k++)
+	//		{
+	//			radius = (*mul_object_found)[k].x[2] * 6.4 * radius_factor;
+	//			if (abs((*mul_object_found)[k].x[0] - result_seeds[i].x[0]) < radius)
+	//				break;
+	//		}
+	//		if (k == mul_object_found->size())
+	//			mul_object_found->push_back(result_seeds[i]);
+	//	}
+	//}
+	for (i = 0; i < NP; i++) {
+		if (solutions[i].fitness < THRESHOLD)
 		{
 			for (k = 0; k < mul_object_found->size(); k++)
 			{
-				radius = (*mul_object_found)[k].x[2] * 6.4 * radius_factor;
-				if (abs((*mul_object_found)[k].x[0] - result_seeds[i].x[0]) < radius)
+				radius = ((double)solutions[i].x[2]) * 6.4 * radius_factor;
+				if (abs(((double)(*mul_object_found)[k].x[0]) - solutions[i].x[0]) < radius)
 					break;
 			}
 			if (k == mul_object_found->size())
-				mul_object_found->push_back(result_seeds[i]);
+				mul_object_found->push_back(solutions[i]);
 		}
 	}
+
 }
 
 

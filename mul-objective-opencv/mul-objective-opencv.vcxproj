@@ -14,6 +14,7 @@
     <ProjectGuid>{655E12A8-CB0E-4CF3-A4F4-3134C3FB1F7D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>mulobjectiveopencv</RootNamespace>
+    <ProjectName>mul-objective-opencv</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
